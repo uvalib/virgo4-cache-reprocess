@@ -72,16 +72,9 @@ func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
 		}
 	}
 
-	// lookup in the cache
-	found, err := cache.Exists( rec.Id())
-    if err != nil {
-       return err
-    }
-
-    // if we cannot find it in the cache, its an error
-    if found == false {
-       return RecordNotInCacheError
-    }
+	// batch up our cache lookups for performance reasons
+	lookupIds := make( []string, 0, lookupCacheBlockSize )
+	lookupIds = append( lookupIds, rec.Id() )
 
 	// read all the records and bail on the first failure except EOF
 	for {
@@ -96,16 +89,36 @@ func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
 			}
 		}
 
-       // lookup in the cache
-       found, err := cache.Exists( rec.Id())
-       if err != nil {
-          return err
-       }
+		lookupIds = append( lookupIds, rec.Id() )
+		if len( lookupIds ) == lookupCacheBlockSize {
 
-       // if we cannot find it in the cache, its an error
-       if found == false {
-          return RecordNotInCacheError
-       }
+			// lookup in the cache
+			found, err := cache.Exists( lookupIds )
+			if err != nil {
+				return err
+			}
+
+			// if we cannot find it in the cache, its an error
+			if found == false {
+				return RecordNotInCacheError
+			}
+
+			lookupIds = lookupIds[:0]
+		}
+	}
+
+	if len( lookupIds ) != 0 {
+
+		// lookup in the cache
+		found, err := cache.Exists( lookupIds )
+		if err != nil {
+			return err
+		}
+
+		// if we cannot find it in the cache, its an error
+		if found == false {
+			return RecordNotInCacheError
+		}
 	}
 
 	// everything is OK
