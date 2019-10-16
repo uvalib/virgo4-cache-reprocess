@@ -73,7 +73,7 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 	}
 
 	// batch up our cache lookups for performance reasons
-	lookupIds := make([]string, 0, lookupCacheBlockSize)
+	lookupIds := make([]string, 0, lookupCacheMaxKeyCount)
 	lookupIds = append(lookupIds, rec.Id())
 
 	// read all the records and bail on the first failure except EOF
@@ -90,7 +90,7 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 		}
 
 		lookupIds = append(lookupIds, rec.Id())
-		if len(lookupIds) == lookupCacheBlockSize {
+		if len(lookupIds) == lookupCacheMaxKeyCount {
 
 			// lookup in the cache
 			found, err := cache.Exists(lookupIds)

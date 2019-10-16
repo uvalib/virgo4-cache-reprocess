@@ -9,7 +9,8 @@ import (
 	//"log"
 )
 
-var lookupCacheBlockSize = 250
+// the number of keys to lookup at once
+var lookupCacheMaxKeyCount = 200
 
 // log a warning if any Redis request takes longer than this
 var warnIfRequestTakesLonger = int64(100)
@@ -55,7 +56,7 @@ func (ci *cacheProxyImpl) Exists(keys []string) (bool, error) {
 	r, err := ci.redis.Exists(keys...).Result()
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	// we want to warn if the request took a long time
-	ci.warnIfSlow(elapsed, fmt.Sprintf("Redis Exists (%d items)", len(keys)))
+	ci.warnIfSlow(elapsed, fmt.Sprintf("redis Exists (%d items)", len(keys)))
 
 	if err != nil {
 		return false, err
@@ -81,40 +82,61 @@ func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 	// specify the field list
 	fields := []string{"type", "source", "payload"}
 
+	// create the command pipeline
+	cmdPipeline := ci.redis.Pipeline().(*redis.Pipeline)
 	for _, id := range keys {
+		cmdPipeline.HMGet(id, fields...)
+	}
 
-		// lookup the id in the cache
-		//log.Printf( "INFO: lookup of %s", id )
-		start := time.Now()
-		res, err := ci.redis.HMGet(id, fields...).Result()
-		elapsed := int64(time.Since(start) / time.Millisecond)
-		// we want to warn if the request took a long time
-		ci.warnIfSlow(elapsed, fmt.Sprintf("Redis HMGet %s", id))
+	start := time.Now()
+	res, err := cmdPipeline.Exec()
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	ci.warnIfSlow(elapsed, fmt.Sprintf( "redis HMGet (%d items)", len(keys)))
+	if err != nil {
+		return nil, err
+	}
 
-		if err != nil {
-			return nil, err
+	// go through the command responses
+	for _, c := range res {
+
+		if c.Err() != nil {
+			log.Printf("WARNING: one of the cache operations failed, ignoring lookup")
+			continue
 		}
 
+		args := c.Args( )
+
+		// each command response consists of an array of strings
+		// 0: key
+		// 1 - n: the fields requested
+
+		//log.Printf("result %d: %t", ix, c)
 		// special handling, remove later
-		if res[0] == nil {
-			log.Printf("ERROR: cache type value is empty, ignoring")
+		if args[0] == nil {
+		   log.Printf("ERROR: cache key value is empty, ignoring lookup")
+		   continue
+		}
+
+		if args[1] == nil {
+			log.Printf("ERROR: cache type value is empty, ignoring lookup")
 			continue
 		}
 
-		if res[1] == nil {
-			log.Printf("ERROR: cache source value is empty, ignoring")
+		if args[2] == nil {
+			log.Printf("ERROR: cache source value is empty, ignoring lookup")
 			continue
 		}
 
-		if res[2] == nil {
-			log.Printf("ERROR: cache payload value is empty, ignoring")
+		if args[3] == nil {
+			log.Printf("ERROR: cache payload value is empty, ignoring lookup")
 			continue
 		}
 
 		// extract the field values
-		t := fmt.Sprintf("%v", res[0])
-		s := fmt.Sprintf("%v", res[1])
-		p := fmt.Sprintf("%v", res[2])
+		id := fmt.Sprintf("%v", args[0])
+		t := fmt.Sprintf("%v", args[1])
+		s := fmt.Sprintf("%v", args[2])
+		p := fmt.Sprintf("%v", args[3])
 		messages = append(messages, ci.constructMessage(id, t, s, p))
 	}
 
