@@ -16,11 +16,11 @@ type ServiceConfig struct {
 	MessageBucketName string // the bucket to use for large messages
 	DownloadDir       string // the S3 file download directory (local)
 
-    RedisHost         string // the redis hostname
-    RedisPort         int    // the redis port
-    RedisPass         string // the redis password (optional)
-    RedisDB           int    // the redis database number
-    RedisTimeout      int    // the redis connect/read/write timeout in seconds
+	RedisHost    string // the redis hostname
+	RedisPort    int    // the redis port
+	RedisPass    string // the redis password (optional)
+	RedisDB      int    // the redis database number
+	RedisTimeout int    // the redis connect/read/write timeout in seconds
 
 	WorkerQueueSize int // the inbound message queue size to feed the workers
 	Workers         int // the number of worker processes
@@ -68,11 +68,11 @@ func LoadConfiguration() *ServiceConfig {
 	cfg.DataSourceName = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_DATA_SOURCE")
 	cfg.MessageBucketName = ensureSetAndNonEmpty("VIRGO4_SQS_MESSAGE_BUCKET")
 	cfg.DownloadDir = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_DOWNLOAD_DIR")
-    cfg.RedisHost = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_REDIS_HOST")
-    cfg.RedisPort = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_PORT")
-    cfg.RedisPass = ensureSet("VIRGO4_CACHE_REPROCESS_REDIS_PASS")
-    cfg.RedisDB = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_DB")
-    cfg.RedisTimeout = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_TIMEOUT")
+	cfg.RedisHost = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_REDIS_HOST")
+	cfg.RedisPort = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_PORT")
+	cfg.RedisPass = ensureSet("VIRGO4_CACHE_REPROCESS_REDIS_PASS")
+	cfg.RedisDB = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_DB")
+	cfg.RedisTimeout = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_TIMEOUT")
 	cfg.WorkerQueueSize = envToInt("VIRGO4_CACHE_REPROCESS_WORK_QUEUE_SIZE")
 	cfg.Workers = envToInt("VIRGO4_CACHE_REPROCESS_WORKERS")
 
@@ -82,11 +82,11 @@ func LoadConfiguration() *ServiceConfig {
 	log.Printf("[CONFIG] DataSourceName       = [%s]", cfg.DataSourceName)
 	log.Printf("[CONFIG] MessageBucketName    = [%s]", cfg.MessageBucketName)
 	log.Printf("[CONFIG] DownloadDir          = [%s]", cfg.DownloadDir)
-    log.Printf("[CONFIG] RedisHost            = [%s]", cfg.RedisHost)
-    log.Printf("[CONFIG] RedisPort            = [%d]", cfg.RedisPort)
-    log.Printf("[CONFIG] RedisPass            = [REDACTED]")
-    log.Printf("[CONFIG] RedisDB              = [%d]", cfg.RedisDB)
-    log.Printf("[CONFIG] RedisTimeout         = [%d]", cfg.RedisTimeout)
+	log.Printf("[CONFIG] RedisHost            = [%s]", cfg.RedisHost)
+	log.Printf("[CONFIG] RedisPort            = [%d]", cfg.RedisPort)
+	log.Printf("[CONFIG] RedisPass            = [REDACTED]")
+	log.Printf("[CONFIG] RedisDB              = [%d]", cfg.RedisDB)
+	log.Printf("[CONFIG] RedisTimeout         = [%d]", cfg.RedisTimeout)
 	log.Printf("[CONFIG] WorkerQueueSize      = [%d]", cfg.WorkerQueueSize)
 	log.Printf("[CONFIG] Workers              = [%d]", cfg.Workers)
 

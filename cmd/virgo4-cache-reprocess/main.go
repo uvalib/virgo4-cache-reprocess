@@ -30,8 +30,8 @@ func main() {
 	outQueueHandle, err := aws.QueueHandle(cfg.OutQueueName)
 	fatalIfError(err)
 
-	cacheProxy, err := NewCacheProxy( cfg )
-    fatalIfError(err)
+	cacheProxy, err := NewCacheProxy(cfg)
+	fatalIfError(err)
 
 	// create the record channel
 	recordsChan := make(chan Record, cfg.WorkerQueueSize)
@@ -64,7 +64,7 @@ func main() {
 			fatalIfError(e)
 
 			// validate the file and ensure each item appears in the cache
-			e = loader.Validate( cacheProxy )
+			e = loader.Validate(cacheProxy)
 			loader.Done()
 			if e != nil {
 				log.Printf("ERROR: %s/%s (%s) appears to be invalid, ignoring it", f.SourceBucket, f.SourceKey, localNames[ix])
@@ -112,7 +112,7 @@ func main() {
 
 			// get the first record
 			count := 0
-			rec, err := loader.First( )
+			rec, err := loader.First()
 			if err != nil {
 				// are we done
 				if err == io.EOF {
@@ -130,7 +130,7 @@ func main() {
 					count++
 					recordsChan <- rec
 
-					rec, err = loader.Next( )
+					rec, err = loader.Next()
 					if err != nil {
 						if err == io.EOF {
 							// this is expected, break out of the processing loop

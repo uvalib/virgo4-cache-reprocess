@@ -36,9 +36,9 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 			if count%awssqs.MAX_SQS_BLOCK_COUNT == 0 {
 
 				// get a batch of records from the cache
-				messages, err := batchCacheGet( cache, block )
+				messages, err := batchCacheGet(cache, block)
 				fatalIfError(err)
-				
+
 				// send the block
 				err = sendOutboundMessages(config, aws, queue, messages)
 				if err != nil {
@@ -60,7 +60,7 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 			// we timed out waiting for new messages, let's flush what we have (if anything)
 			if len(block) != 0 {
 
-				messages, err := batchCacheGet( cache, block )
+				messages, err := batchCacheGet(cache, block)
 				fatalIfError(err)
 
 				// send the block
@@ -87,21 +87,21 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 
 // look up a set of keys in the cache. We have already verified that the keys all exist so we expect failures to
 // be fatal
-func batchCacheGet( cache CacheProxy, records []Record ) ( []awssqs.Message, error ) {
-	
-	keys := make( []string, 0, len( records ))
+func batchCacheGet(cache CacheProxy, records []Record) ([]awssqs.Message, error) {
+
+	keys := make([]string, 0, len(records))
 	for _, m := range records {
-		keys = append( keys, m.Id())
+		keys = append(keys, m.Id())
 	}
-	
-	messages, err := cache.Get( keys )
+
+	messages, err := cache.Get(keys)
 	if err != nil {
 		return nil, err
 	}
 
 	// special case
-	if len( messages ) != len( records ) {
-		log.Printf("WARNING: not all cache gets were successful, this is unexpected" )
+	if len(messages) != len(records) {
+		log.Printf("WARNING: not all cache gets were successful, this is unexpected")
 	}
 
 	return messages, nil
@@ -129,7 +129,6 @@ func sendOutboundMessages(config ServiceConfig, aws awssqs.AWS_SQS, queue awssqs
 
 	return err
 }
-
 
 //
 // end of file

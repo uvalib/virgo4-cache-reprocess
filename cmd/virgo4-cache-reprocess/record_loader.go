@@ -16,22 +16,22 @@ var FileNotOpenError = fmt.Errorf("File is not open")
 
 // the RecordLoader interface
 type RecordLoader interface {
-	Validate( CacheProxy ) error
-	First( ) (Record, error)
-	Next( ) (Record, error)
+	Validate(CacheProxy) error
+	First() (Record, error)
+	Next() (Record, error)
 	Done()
 }
 
 // the record interface
 type Record interface {
-	Id()    string
+	Id() string
 	//Raw() []byte
 }
 
 // this is our loader implementation
 type recordLoaderImpl struct {
-	File       *os.File
-	Reader     *bufio.Reader
+	File   *os.File
+	Reader *bufio.Reader
 }
 
 // this is our record implementation
@@ -48,20 +48,20 @@ func NewRecordLoader(filename string) (RecordLoader, error) {
 		return nil, err
 	}
 
-	reader := bufio.NewReader( file )
+	reader := bufio.NewReader(file)
 
 	return &recordLoaderImpl{File: file, Reader: reader}, nil
 }
 
 // read all the records to ensure the file is valid
-func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
+func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 
 	if l.File == nil {
 		return FileNotOpenError
 	}
 
 	// get the first record and error out if bad. An EOF is OK, just means the file is empty
-	rec, err := l.First( )
+	rec, err := l.First()
 	if err != nil {
 		// are we done
 		if err == io.EOF {
@@ -73,12 +73,12 @@ func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
 	}
 
 	// batch up our cache lookups for performance reasons
-	lookupIds := make( []string, 0, lookupCacheBlockSize )
-	lookupIds = append( lookupIds, rec.Id() )
+	lookupIds := make([]string, 0, lookupCacheBlockSize)
+	lookupIds = append(lookupIds, rec.Id())
 
 	// read all the records and bail on the first failure except EOF
 	for {
-		rec, err = l.Next( )
+		rec, err = l.Next()
 
 		if err != nil {
 			// are we done
@@ -89,11 +89,11 @@ func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
 			}
 		}
 
-		lookupIds = append( lookupIds, rec.Id() )
-		if len( lookupIds ) == lookupCacheBlockSize {
+		lookupIds = append(lookupIds, rec.Id())
+		if len(lookupIds) == lookupCacheBlockSize {
 
 			// lookup in the cache
-			found, err := cache.Exists( lookupIds )
+			found, err := cache.Exists(lookupIds)
 			if err != nil {
 				return err
 			}
@@ -107,10 +107,10 @@ func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
 		}
 	}
 
-	if len( lookupIds ) != 0 {
+	if len(lookupIds) != 0 {
 
 		// lookup in the cache
-		found, err := cache.Exists( lookupIds )
+		found, err := cache.Exists(lookupIds)
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
 	return nil
 }
 
-func (l *recordLoaderImpl) First( ) (Record, error) {
+func (l *recordLoaderImpl) First() (Record, error) {
 
 	if l.File == nil {
 		return nil, FileNotOpenError
@@ -137,10 +137,10 @@ func (l *recordLoaderImpl) First( ) (Record, error) {
 		return nil, err
 	}
 
-	return l.Next( )
+	return l.Next()
 }
 
-func (l *recordLoaderImpl) Next( ) (Record, error) {
+func (l *recordLoaderImpl) Next() (Record, error) {
 
 	if l.File == nil {
 		return nil, FileNotOpenError
@@ -164,8 +164,7 @@ func (l *recordLoaderImpl) Done() {
 
 func (l *recordLoaderImpl) recordRead() (Record, error) {
 
-
-	id, err := l.Reader.ReadString( '\n' )
+	id, err := l.Reader.ReadString('\n')
 	if err != nil {
 		return nil, err
 	}
@@ -173,20 +172,20 @@ func (l *recordLoaderImpl) recordRead() (Record, error) {
 	// remove the newline
 	id = strings.TrimSuffix(id, "\n")
 
-	if len( id ) == 0 {
+	if len(id) == 0 {
 		return nil, BadRecordError
 	}
 
-   if id[0] != 'u' {
-      log.Printf("ERROR: record id is suspect (%s)", id)
-      return nil, BadRecordIdError
-   }
+	if id[0] != 'u' {
+		log.Printf("ERROR: record id is suspect (%s)", id)
+		return nil, BadRecordIdError
+	}
 
-	return &recordImpl{RecordId: id }, nil
+	return &recordImpl{RecordId: id}, nil
 }
 
 func (r *recordImpl) Id() string {
-   return r.RecordId
+	return r.RecordId
 }
 
 //func (r *recordImpl) Raw() []byte {
