@@ -30,6 +30,9 @@ func main() {
 	outQueueHandle, err := aws.QueueHandle(cfg.OutQueueName)
 	fatalIfError(err)
 
+	cache, err := NewCacheProxy( cfg )
+    fatalIfError(err)
+
 	// create the record channel
 	recordsChan := make(chan Record, cfg.WorkerQueueSize)
 
@@ -40,16 +43,16 @@ func main() {
 
 	for {
 		// notification that there is one or more new ingest files to be processed
-		inbound, receiptHandle, err := getInboundNotification(*cfg, aws, inQueueHandle)
-		fatalIfError(err)
+		inbound, receiptHandle, e := getInboundNotification(*cfg, aws, inQueueHandle)
+		fatalIfError(e)
 
 		// download each file and validate it
 		localNames := make([]string, 0, len(inbound))
 		for ix, f := range inbound {
 
 			// download the file
-			localFile, err := s3download(cfg.DownloadDir, f.SourceBucket, f.SourceKey)
-			fatalIfError(err)
+			localFile, e := s3download(cfg.DownloadDir, f.SourceBucket, f.SourceKey)
+			fatalIfError(e)
 
 			// save the local name, we will need it later
 			localNames = append(localNames, localFile)
@@ -57,14 +60,15 @@ func main() {
 			log.Printf("Validating %s/%s (%s)", f.SourceBucket, f.SourceKey, localNames[ix])
 
 			// create a new loader
-			loader, err := NewRecordLoader(localNames[ix])
-			fatalIfError(err)
+			loader, e := NewRecordLoader(localNames[ix])
+			fatalIfError(e)
 
-			// validate the file
-			err = loader.Validate()
+			// validate the file and ensure each item appears in the cache
+			e = loader.Validate( cache )
 			loader.Done()
-			if err != nil {
+			if e != nil {
 				log.Printf("ERROR: %s/%s (%s) appears to be invalid, ignoring it", f.SourceBucket, f.SourceKey, localNames[ix])
+				err = e
 				break
 			}
 		}
@@ -72,8 +76,8 @@ func main() {
 		// one of the files was invalid, we need to ignore the entire batch and delete the local files
 		if err != nil {
 			for _, f := range localNames {
-				err = os.Remove(f)
-				fatalIfError(err)
+				e := os.Remove(f)
+				fatalIfError(e)
 			}
 
 			// go back to waiting for the next notification

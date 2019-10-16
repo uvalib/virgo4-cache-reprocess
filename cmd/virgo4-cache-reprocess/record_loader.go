@@ -6,15 +6,17 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 var BadRecordError = fmt.Errorf("Bad record encountered")
 var BadRecordIdError = fmt.Errorf("Bad record identifier")
+var RecordNotInCacheError = fmt.Errorf("Record is not available in the cache")
 var FileNotOpenError = fmt.Errorf("File is not open")
 
 // the RecordLoader interface
 type RecordLoader interface {
-	Validate() error
+	Validate( CacheProxy ) error
 	First( ) (Record, error)
 	Next( ) (Record, error)
 	Done()
@@ -22,8 +24,8 @@ type RecordLoader interface {
 
 // the record interface
 type Record interface {
-	Id() (string, error)
-	Raw() []byte
+	Id()    string
+	//Raw() []byte
 }
 
 // this is our loader implementation
@@ -34,8 +36,8 @@ type recordLoaderImpl struct {
 
 // this is our record implementation
 type recordImpl struct {
-	RawBytes []byte
-	recordId string
+	//RawBytes []byte
+	RecordId string
 }
 
 // and the factory
@@ -52,14 +54,14 @@ func NewRecordLoader(filename string) (RecordLoader, error) {
 }
 
 // read all the records to ensure the file is valid
-func (l *recordLoaderImpl) Validate() error {
+func (l *recordLoaderImpl) Validate( cache CacheProxy ) error {
 
 	if l.File == nil {
 		return FileNotOpenError
 	}
 
 	// get the first record and error out if bad. An EOF is OK, just means the file is empty
-	_, err := l.First( )
+	rec, err := l.First( )
 	if err != nil {
 		// are we done
 		if err == io.EOF {
@@ -70,9 +72,20 @@ func (l *recordLoaderImpl) Validate() error {
 		}
 	}
 
+	// lookup in the cache
+	found, err := cache.Exists( rec.Id())
+    if err != nil {
+       return err
+    }
+
+    // if we cannot find it in the cache, its an error
+    if found == false {
+       return RecordNotInCacheError
+    }
+
 	// read all the records and bail on the first failure except EOF
 	for {
-		_, err = l.Next( )
+		rec, err = l.Next( )
 
 		if err != nil {
 			// are we done
@@ -82,6 +95,17 @@ func (l *recordLoaderImpl) Validate() error {
 				return err
 			}
 		}
+
+       // lookup in the cache
+       found, err := cache.Exists( rec.Id())
+       if err != nil {
+          return err
+       }
+
+       // if we cannot find it in the cache, its an error
+       if found == false {
+          return RecordNotInCacheError
+       }
 	}
 
 	// everything is OK
@@ -114,11 +138,6 @@ func (l *recordLoaderImpl) Next( ) (Record, error) {
 		return nil, err
 	}
 
-	_, err = rec.Id()
-	if err != nil {
-		return nil, err
-	}
-
 	return rec, nil
 }
 
@@ -133,45 +152,33 @@ func (l *recordLoaderImpl) Done() {
 func (l *recordLoaderImpl) recordRead() (Record, error) {
 
 
-	line, err := l.Reader.ReadString( '\n' )
+	id, err := l.Reader.ReadString( '\n' )
 	if err != nil {
 		return nil, err
 	}
 
-	if len( line ) == 0 {
+	// remove the newline
+	id = strings.TrimSuffix(id, "\n")
+
+	if len( id ) == 0 {
 		return nil, BadRecordError
 	}
 
-	return &recordImpl{RawBytes: []byte( line )}, nil
+   if id[0] != 'u' {
+      log.Printf("ERROR: record id is suspect (%s)", id)
+      return nil, BadRecordIdError
+   }
+
+	return &recordImpl{RecordId: id }, nil
 }
 
-func (r *recordImpl) Id() (string, error) {
-
-	if len( r.recordId ) != 0 {
-		return r.recordId, nil
-	}
-
-	return r.extractId()
+func (r *recordImpl) Id() string {
+   return r.RecordId
 }
 
-func (r *recordImpl) Raw() []byte {
-	return r.RawBytes
-}
-
-func (r *recordImpl) extractId() (string, error) {
-
-	id := string( r.RawBytes )
-
-	// ensure the first character of the Id us a 'u' character
-	if id[0] != 'u' {
-		log.Printf("ERROR: record id is suspect (%s)", id)
-		return "", BadRecordIdError
-	}
-
-	r.recordId = id
-
-	return r.recordId, nil
-}
+//func (r *recordImpl) Raw() []byte {
+//	return r.RawBytes
+//}
 
 //
 // end of file
