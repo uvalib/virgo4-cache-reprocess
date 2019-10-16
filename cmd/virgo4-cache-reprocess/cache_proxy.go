@@ -1,6 +1,7 @@
 package main
 
 import (
+   "fmt"
    "github.com/go-redis/redis/v7"
    "github.com/uvalib/virgo4-sqs-sdk/awssqs"
    "time"
@@ -25,16 +26,17 @@ func NewCacheProxy( config * ServiceConfig ) ( CacheProxy, error ) {
 
    impl := &cacheProxyImpl{}
 
-   impl.redis = redis.NewClient( &redis.Options{
-      DialTimeout: 30 * time.Second,
-      ReadTimeout: 30 * time.Second,
-      Addr:        "std-redis-staging.wbueu6.0001.use1.cache.amazonaws.com:6379",
-      Password:    "",
-      DB:          0,
+   options := &redis.Options{
+      DialTimeout: time.Duration( config.RedisTimeout ) * time.Second,
+      ReadTimeout: time.Duration( config.RedisTimeout ) * time.Second,
+      Addr:        fmt.Sprintf( "%s:%d", config.RedisHost, config.RedisPort ),
+      Password:    config.RedisPass,
+      DB:          config.RedisDB,
       PoolSize:    4,
-   })
+   }
+   impl.redis = redis.NewClient( options )
 
-   _, err := impl.redis.Ping().Result()
+      _, err := impl.redis.Ping().Result()
    return impl, err
 }
 
