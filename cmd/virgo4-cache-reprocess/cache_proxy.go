@@ -91,7 +91,7 @@ func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 	start := time.Now()
 	res, err := cmdPipeline.Exec()
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	ci.warnIfSlow(elapsed, fmt.Sprintf( "redis HMGet (%d items)", len(keys)))
+	ci.warnIfSlow(elapsed, fmt.Sprintf("redis HMGet (%d items)", len(keys)))
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 			continue
 		}
 
-		args := c.Args( )
+		args := c.Args()
 
 		// each command response consists of an array of strings
 		// 0: key
@@ -113,8 +113,8 @@ func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 		//log.Printf("result %d: %t", ix, c)
 		// special handling, remove later
 		if args[0] == nil {
-		   log.Printf("ERROR: cache key value is empty, ignoring lookup")
-		   continue
+			log.Printf("ERROR: cache key value is empty, ignoring lookup")
+			continue
 		}
 
 		if args[1] == nil {
