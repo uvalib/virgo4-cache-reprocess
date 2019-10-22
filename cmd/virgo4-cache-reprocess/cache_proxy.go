@@ -145,10 +145,11 @@ func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 
 func (ci *cacheProxyImpl) constructMessage(id string, theType string, source string, payload string) awssqs.Message {
 
-	attributes := make([]awssqs.Attribute, 0, 3)
-	attributes = append(attributes, awssqs.Attribute{Name: "id", Value: id})
-	attributes = append(attributes, awssqs.Attribute{Name: "type", Value: theType})
-	attributes = append(attributes, awssqs.Attribute{Name: "source", Value: source})
+	attributes := make([]awssqs.Attribute, 0, 4)
+	attributes = append(attributes, awssqs.Attribute{Name: awssqs.AttributeKeyRecordId, Value: id})
+	attributes = append(attributes, awssqs.Attribute{Name: awssqs.AttributeKeyRecordType, Value: theType})
+	attributes = append(attributes, awssqs.Attribute{Name: awssqs.AttributeKeyRecordSource, Value: source})
+	attributes = append(attributes, awssqs.Attribute{Name: awssqs.AttributeKeyRecordOperation, Value: awssqs.AttributeValueRecordOperationUpdate})
 	return awssqs.Message{Attribs: attributes, Payload: []byte(payload)}
 }
 
