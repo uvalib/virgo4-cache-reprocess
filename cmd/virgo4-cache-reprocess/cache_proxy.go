@@ -83,13 +83,14 @@ func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 	fields := []string{"type", "source", "payload"}
 
 	// create the command pipeline
-	cmdPipeline := ci.redis.Pipeline().(*redis.Pipeline)
+	cmdPipeline := ci.redis.Pipeline()
+	m := map[string]*redis.SliceCmd{}
 	for _, id := range keys {
-		cmdPipeline.HMGet(id, fields...)
+		m[id] = cmdPipeline.HMGet(id, fields...)
 	}
 
 	start := time.Now()
-	res, err := cmdPipeline.Exec()
+	_, err := cmdPipeline.Exec()
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	ci.warnIfSlow(elapsed, fmt.Sprintf("redis HMGet (%d items)", len(keys)))
 	if err != nil {
@@ -97,46 +98,35 @@ func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 	}
 
 	// go through the command responses
-	for _, c := range res {
+	for id, v := range m {
 
-		if c.Err() != nil {
+		res, err := v.Result()
+		if err != nil {
 			log.Printf("WARNING: one of the cache operations failed, ignoring lookup")
 			continue
 		}
 
-		args := c.Args()
+		// these are the fields in the order we requested them in
 
-		// each command response consists of an array of strings
-		// 0: key
-		// 1 - n: the fields requested
-
-		//log.Printf("result %d: %t", ix, c)
-		// special handling, remove later
-		if args[0] == nil {
-			log.Printf("ERROR: cache key value is empty, ignoring lookup")
-			continue
-		}
-
-		if args[1] == nil {
+		if res[0] == nil {
 			log.Printf("ERROR: cache type value is empty, ignoring lookup")
 			continue
 		}
 
-		if args[2] == nil {
+		if res[1] == nil {
 			log.Printf("ERROR: cache source value is empty, ignoring lookup")
 			continue
 		}
 
-		if args[3] == nil {
+		if res[2] == nil {
 			log.Printf("ERROR: cache payload value is empty, ignoring lookup")
 			continue
 		}
 
 		// extract the field values
-		id := fmt.Sprintf("%v", args[0])
-		t := fmt.Sprintf("%v", args[1])
-		s := fmt.Sprintf("%v", args[2])
-		p := fmt.Sprintf("%v", args[3])
+		t := fmt.Sprintf("%s", res[0])
+		s := fmt.Sprintf("%s", res[1])
+		p := fmt.Sprintf("%s", res[2])
 		messages = append(messages, ci.constructMessage(id, t, s, p))
 	}
 
