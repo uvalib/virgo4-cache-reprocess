@@ -78,7 +78,7 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 			}
 
 			// reset the count
-			count = 1
+			count = 0
 		}
 	}
 
