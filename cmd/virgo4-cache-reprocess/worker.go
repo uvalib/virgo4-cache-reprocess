@@ -33,7 +33,7 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 			block = append(block, record)
 
 			// have we reached a block size limit
-			if count != 0 && count%awssqs.MAX_SQS_BLOCK_COUNT == 0 {
+			if count != 0 && count%awssqs.MAX_SQS_BLOCK_COUNT == awssqs.MAX_SQS_BLOCK_COUNT-1 {
 
 				// get a batch of records from the cache
 				messages, err := batchCacheGet(cache, block)
