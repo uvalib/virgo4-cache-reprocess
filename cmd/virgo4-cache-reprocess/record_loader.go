@@ -68,6 +68,7 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 			log.Printf("WARNING: EOF on first read, looks like an empty file")
 			return nil
 		} else {
+			log.Printf("ERROR: validation failure on record index 0")
 			return err
 		}
 	}
@@ -75,6 +76,9 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 	// batch up our cache lookups for performance reasons
 	lookupIds := make([]string, 0, lookupCacheMaxKeyCount)
 	lookupIds = append(lookupIds, rec.Id())
+
+	// used for reporting
+	recordIndex := 1
 
 	// read all the records and bail on the first failure except EOF
 	for {
@@ -85,6 +89,7 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 			if err == io.EOF {
 				break
 			} else {
+				log.Printf("ERROR: validation failure on record index %d", recordIndex)
 				return err
 			}
 		}
@@ -100,14 +105,21 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 
 			// if we cannot find it in the cache, its an error
 			if found == false {
+				startIx := 0
+				if recordIndex > lookupCacheMaxKeyCount {
+					startIx = recordIndex - lookupCacheMaxKeyCount
+				}
+				log.Printf("ERROR: one or more records not in cache between index %d and %d", startIx, recordIndex)
 				return RecordNotInCacheError
 			}
 
 			lookupIds = lookupIds[:0]
 		}
+		recordIndex++
 	}
 
-	if len(lookupIds) != 0 {
+	sz := len(lookupIds)
+	if sz != 0 {
 
 		// lookup in the cache
 		found, err := cache.Exists(lookupIds)
@@ -117,6 +129,11 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 
 		// if we cannot find it in the cache, its an error
 		if found == false {
+			startIx := 0
+			if recordIndex > sz {
+				startIx = recordIndex - sz
+			}
+			log.Printf("ERROR: one or more records not in cache between index %d and %d", startIx, recordIndex)
 			return RecordNotInCacheError
 		}
 	}
