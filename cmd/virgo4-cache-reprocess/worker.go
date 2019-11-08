@@ -41,7 +41,7 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 				// send the block
 				err = sendOutboundMessages(config, aws, queue, messages)
 				if err != nil {
-					if err != awssqs.OneOrMoreOperationsUnsuccessfulError {
+					if err != awssqs.ErrOneOrMoreOperationsUnsuccessful {
 						fatalIfError(err)
 					}
 				}
@@ -65,7 +65,7 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 				// send the block
 				err = sendOutboundMessages(config, aws, queue, messages)
 				if err != nil {
-					if err != awssqs.OneOrMoreOperationsUnsuccessfulError {
+					if err != awssqs.ErrOneOrMoreOperationsUnsuccessful {
 						fatalIfError(err)
 					}
 				}
@@ -110,13 +110,13 @@ func sendOutboundMessages(config ServiceConfig, aws awssqs.AWS_SQS, queue awssqs
 
 	opStatus, err := aws.BatchMessagePut(queue, batch)
 	if err != nil {
-		if err != awssqs.OneOrMoreOperationsUnsuccessfulError {
+		if err != awssqs.ErrOneOrMoreOperationsUnsuccessful {
 			return err
 		}
 	}
 
 	// if one or more message failed to send, retry...
-	if err == awssqs.OneOrMoreOperationsUnsuccessfulError {
+	if err == awssqs.ErrOneOrMoreOperationsUnsuccessful {
 
 		// check the operation results
 		for ix, op := range opStatus {
