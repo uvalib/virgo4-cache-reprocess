@@ -21,10 +21,9 @@ func worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, cache CacheProxy, 
 		// process a message or wait...
 		select {
 		case record = <-records:
-			break
+
 		case <-time.After(flushTimeout):
 			timeout = true
-			break
 		}
 
 		// did we timeout, if not we have a message to process
