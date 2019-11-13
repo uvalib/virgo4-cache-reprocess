@@ -9,6 +9,9 @@ import (
 	"github.com/uvalib/virgo4-sqs-sdk/awssqs"
 )
 
+// time to wait before flushing pending records
+var flushTimeout = 5 * time.Second
+
 //
 // main entry point
 //
@@ -33,12 +36,20 @@ func main() {
 	cacheProxy, err := NewCacheProxy(cfg)
 	fatalIfError(err)
 
-	// create the record channel
-	recordsChan := make(chan Record, cfg.WorkerQueueSize)
+	// create the channel of inbound items
+	inboundRecordsChan := make(chan Record, cfg.InboundWorkerQueueSize)
 
-	// start workers here
-	for w := 1; w <= cfg.Workers; w++ {
-		go worker(w, *cfg, aws, cacheProxy, outQueueHandle, recordsChan)
+	// create the channel of inbound items
+	outboundRecordsChan := make(chan awssqs.Message, cfg.OutboundWorkerQueueSize)
+
+	// start cache workers here
+	for w := 1; w <= cfg.CacheWorkers; w++ {
+		go cache_worker(w, cacheProxy, inboundRecordsChan, outboundRecordsChan)
+	}
+
+	// start send workers here
+	for w := 1; w <= cfg.SendWorkers; w++ {
+		go send_worker(w, *cfg, aws, outQueueHandle, outboundRecordsChan)
 	}
 
 	for {
@@ -132,7 +143,7 @@ func main() {
 			if err == nil {
 				for {
 					count++
-					recordsChan <- rec
+					inboundRecordsChan <- rec
 
 					rec, err = loader.Next()
 					if err != nil {

@@ -11,7 +11,6 @@ import (
 
 var ErrBadRecord = fmt.Errorf("bad record encountered")
 var ErrBadRecordId = fmt.Errorf("bad record identifier")
-var ErrRecordNotInCache = fmt.Errorf("record is not available in the cache")
 var ErrFileNotOpen = fmt.Errorf("file is not open")
 
 // the RecordLoader interface
@@ -98,19 +97,9 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 		if len(lookupIds) == lookupCacheMaxKeyCount {
 
 			// lookup in the cache
-			found, err := cache.Exists(lookupIds)
+			_, err := cache.Exists(lookupIds)
 			if err != nil {
 				return err
-			}
-
-			// if we cannot find it in the cache, its an error
-			if found == false {
-				startIx := 0
-				if recordIndex > lookupCacheMaxKeyCount {
-					startIx = recordIndex - lookupCacheMaxKeyCount
-				}
-				log.Printf("ERROR: one or more records not in cache between index %d and %d", startIx, recordIndex)
-				return ErrRecordNotInCache
 			}
 
 			lookupIds = lookupIds[:0]
@@ -122,19 +111,9 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 	if sz != 0 {
 
 		// lookup in the cache
-		found, err := cache.Exists(lookupIds)
+		_, err := cache.Exists(lookupIds)
 		if err != nil {
 			return err
-		}
-
-		// if we cannot find it in the cache, its an error
-		if found == false {
-			startIx := 0
-			if recordIndex > sz {
-				startIx = recordIndex - sz
-			}
-			log.Printf("ERROR: one or more records not in cache between index %d and %d", startIx, recordIndex)
-			return ErrRecordNotInCache
 		}
 	}
 

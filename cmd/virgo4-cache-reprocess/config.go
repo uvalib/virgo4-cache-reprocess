@@ -16,14 +16,17 @@ type ServiceConfig struct {
 	MessageBucketName string // the bucket to use for large messages
 	DownloadDir       string // the S3 file download directory (local)
 
-	RedisHost    string // the redis hostname
-	RedisPort    int    // the redis port
-	RedisPass    string // the redis password (optional)
-	RedisDB      int    // the redis database number
-	RedisTimeout int    // the redis connect/read/write timeout in seconds
+	PostgresHost     string // the postgres endpoint
+	PostgresPort     int    // and port
+	PostgresUser     string // username
+	PostgresPass     string // and password
+	PostgresDatabase string // which database to use
+	PostgresTable    string // which table to use
 
-	WorkerQueueSize int // the inbound message queue size to feed the workers
-	Workers         int // the number of worker processes
+	InboundWorkerQueueSize  int // the message queue size that feeds the cache workers
+	CacheWorkers            int // the number of cache worker processes
+	OutboundWorkerQueueSize int // the message queue size that feeds the send workers
+	SendWorkers             int // the number of send worker processes
 }
 
 func ensureSet(env string) string {
@@ -68,27 +71,33 @@ func LoadConfiguration() *ServiceConfig {
 	cfg.DataSourceName = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_DATA_SOURCE")
 	cfg.MessageBucketName = ensureSetAndNonEmpty("VIRGO4_SQS_MESSAGE_BUCKET")
 	cfg.DownloadDir = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_DOWNLOAD_DIR")
-	cfg.RedisHost = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_REDIS_HOST")
-	cfg.RedisPort = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_PORT")
-	cfg.RedisPass = ensureSet("VIRGO4_CACHE_REPROCESS_REDIS_PASS")
-	cfg.RedisDB = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_DB")
-	cfg.RedisTimeout = envToInt("VIRGO4_CACHE_REPROCESS_REDIS_TIMEOUT")
-	cfg.WorkerQueueSize = envToInt("VIRGO4_CACHE_REPROCESS_WORK_QUEUE_SIZE")
-	cfg.Workers = envToInt("VIRGO4_CACHE_REPROCESS_WORKERS")
+	cfg.PostgresHost = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_POSTGRES_HOST")
+	cfg.PostgresPort = envToInt("VIRGO4_CACHE_REPROCESS_POSTGRES_PORT")
+	cfg.PostgresUser = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_POSTGRES_USER")
+	cfg.PostgresPass = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_POSTGRES_PASS")
+	cfg.PostgresDatabase = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_POSTGRES_DATABASE")
+	cfg.PostgresTable = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_POSTGRES_TABLE")
+	cfg.InboundWorkerQueueSize = envToInt("VIRGO4_CACHE_REPROCESS_INBOUND_WORK_QUEUE_SIZE")
+	cfg.CacheWorkers = envToInt("VIRGO4_CACHE_REPROCESS_CACHE_WORKERS")
+	cfg.OutboundWorkerQueueSize = envToInt("VIRGO4_CACHE_REPROCESS_OUTBOUND_WORK_QUEUE_SIZE")
+	cfg.SendWorkers = envToInt("VIRGO4_CACHE_REPROCESS_SEND_WORKERS")
 
-	log.Printf("[CONFIG] InQueueName          = [%s]", cfg.InQueueName)
-	log.Printf("[CONFIG] OutQueueName         = [%s]", cfg.OutQueueName)
-	log.Printf("[CONFIG] PollTimeOut          = [%d]", cfg.PollTimeOut)
-	log.Printf("[CONFIG] DataSourceName       = [%s]", cfg.DataSourceName)
-	log.Printf("[CONFIG] MessageBucketName    = [%s]", cfg.MessageBucketName)
-	log.Printf("[CONFIG] DownloadDir          = [%s]", cfg.DownloadDir)
-	log.Printf("[CONFIG] RedisHost            = [%s]", cfg.RedisHost)
-	log.Printf("[CONFIG] RedisPort            = [%d]", cfg.RedisPort)
-	log.Printf("[CONFIG] RedisPass            = [REDACTED]")
-	log.Printf("[CONFIG] RedisDB              = [%d]", cfg.RedisDB)
-	log.Printf("[CONFIG] RedisTimeout         = [%d]", cfg.RedisTimeout)
-	log.Printf("[CONFIG] WorkerQueueSize      = [%d]", cfg.WorkerQueueSize)
-	log.Printf("[CONFIG] Workers              = [%d]", cfg.Workers)
+	log.Printf("[CONFIG] InQueueName             = [%s]", cfg.InQueueName)
+	log.Printf("[CONFIG] OutQueueName            = [%s]", cfg.OutQueueName)
+	log.Printf("[CONFIG] PollTimeOut             = [%d]", cfg.PollTimeOut)
+	log.Printf("[CONFIG] DataSourceName          = [%s]", cfg.DataSourceName)
+	log.Printf("[CONFIG] MessageBucketName       = [%s]", cfg.MessageBucketName)
+	log.Printf("[CONFIG] DownloadDir             = [%s]", cfg.DownloadDir)
+	log.Printf("[CONFIG] PostgresHost            = [%s]", cfg.PostgresHost)
+	log.Printf("[CONFIG] PostgresPort            = [%d]", cfg.PostgresPort)
+	log.Printf("[CONFIG] PostgresUser            = [%s]", cfg.PostgresUser)
+	log.Printf("[CONFIG] PostgresPass            = [REDACTED]")
+	log.Printf("[CONFIG] PostgresDatabase        = [%s]", cfg.PostgresDatabase)
+	log.Printf("[CONFIG] PostgresTable           = [%s]", cfg.PostgresTable)
+	log.Printf("[CONFIG] InboundWorkerQueueSize  = [%d]", cfg.InboundWorkerQueueSize)
+	log.Printf("[CONFIG] CacheWorkers            = [%d]", cfg.CacheWorkers)
+	log.Printf("[CONFIG] OutboundWorkerQueueSize = [%d]", cfg.OutboundWorkerQueueSize)
+	log.Printf("[CONFIG] SendWorkers             = [%d]", cfg.SendWorkers)
 
 	return &cfg
 }
