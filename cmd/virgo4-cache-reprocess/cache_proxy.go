@@ -41,8 +41,8 @@ func NewCacheProxy(config *ServiceConfig) (CacheProxy, error) {
 
 	impl := &cacheProxyImpl{}
 
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=disable",
-		config.PostgresUser, config.PostgresPass, config.PostgresDatabase, config.PostgresHost, config.PostgresPort)
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d connect_timeout=%d sslmode=disable",
+		config.PostgresUser, config.PostgresPass, config.PostgresDatabase, config.PostgresHost, config.PostgresPort, 30)
 
 	db, err := dbx.MustOpen("postgres", connStr)
 	if err != nil {
