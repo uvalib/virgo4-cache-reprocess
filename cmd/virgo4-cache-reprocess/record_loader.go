@@ -79,7 +79,9 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 	// used for reporting
 	recordIndex := 1
 
-	// read all the records and bail on the first failure except EOF
+	// read all the records and process until EOF
+	var retErr error
+
 	for {
 		rec, err = l.Next()
 
@@ -99,7 +101,7 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 			// lookup in the cache
 			_, err := cache.Exists(lookupIds)
 			if err != nil {
-				return err
+				retErr = err
 			}
 
 			lookupIds = lookupIds[:0]
@@ -113,12 +115,12 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 		// lookup in the cache
 		_, err := cache.Exists(lookupIds)
 		if err != nil {
-			return err
+			retErr = err
 		}
 	}
 
-	// everything is OK
-	return nil
+	// return the appropriate status
+	return retErr
 }
 
 func (l *recordLoaderImpl) First() (Record, error) {

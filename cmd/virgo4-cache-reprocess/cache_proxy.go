@@ -11,7 +11,7 @@ import (
 )
 
 // errors returned by the cache
-var ErrNotInCache = fmt.Errorf("not in cache")
+var ErrNotInCache = fmt.Errorf("item(s) not in cache")
 
 // the maximum number of keys to lookup at once
 var lookupCacheMaxKeyCount = 500
