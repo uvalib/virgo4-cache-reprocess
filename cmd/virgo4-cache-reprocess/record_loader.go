@@ -101,7 +101,12 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 			// lookup in the cache
 			_, err := cache.Exists(lookupIds)
 			if err != nil {
-				retErr = err
+				// this is an acceptable error, anything else is fatal
+				if err == ErrNotInCache {
+					retErr = err
+				} else {
+					fatalIfError(err)
+				}
 			}
 
 			lookupIds = lookupIds[:0]
@@ -114,8 +119,11 @@ func (l *recordLoaderImpl) Validate(cache CacheProxy) error {
 
 		// lookup in the cache
 		_, err := cache.Exists(lookupIds)
-		if err != nil {
+		// this is an acceptable error, anything else is fatal
+		if err == ErrNotInCache {
 			retErr = err
+		} else {
+			fatalIfError(err)
 		}
 	}
 
