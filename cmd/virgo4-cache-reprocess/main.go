@@ -92,7 +92,7 @@ func main() {
 		// one of the files was invalid, we need to ignore the entire batch and delete the local files
 		if err != nil {
 			for _, f := range localNames {
-				log.Printf( "INFO: removing invalid file %s", f)
+				log.Printf("INFO: removing invalid file %s", f)
 				e := os.Remove(f)
 				fatalIfError(e)
 			}
@@ -169,7 +169,7 @@ func main() {
 			log.Printf("Done processing %s/%s (%s). %d records (%0.2f tps)", f.SourceBucket, f.SourceKey, localNames[ix], count, float64(count)/duration.Seconds())
 
 			// file has been ingested, remove it
-			log.Printf( "INFO: removing processed file %s", localNames[ix])
+			log.Printf("INFO: removing processed file %s", localNames[ix])
 			err = os.Remove(localNames[ix])
 			fatalIfError(err)
 		}
