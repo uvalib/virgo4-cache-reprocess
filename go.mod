@@ -3,7 +3,7 @@ module github.com/uvalib/virgo4-cache-reprocess
 go 1.13
 
 require (
-	github.com/aws/aws-sdk-go v1.28.9
+	github.com/aws/aws-sdk-go v1.28.11
 	github.com/go-ozzo/ozzo-dbx v1.5.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.3.0
