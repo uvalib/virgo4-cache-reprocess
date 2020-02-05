@@ -182,10 +182,10 @@ func (l *recordLoaderImpl) recordRead() (Record, error) {
 		return nil, ErrBadRecord
 	}
 
-	if id[0] != 'u' {
-		log.Printf("ERROR: record id is suspect (%s)", id)
-		return nil, ErrBadRecordId
-	}
+	//if id[0] != 'u' {
+	//	log.Printf("ERROR: record id is suspect (%s)", id)
+	//	return nil, ErrBadRecordId
+	//}
 
 	return &recordImpl{RecordId: id}, nil
 }
