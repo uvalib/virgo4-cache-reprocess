@@ -10,7 +10,7 @@ import (
 	"github.com/uvalib/virgo4-sqs-sdk/awssqs"
 )
 
-// errors returned by the cache
+// ErrNotInCache - item not in the cache
 var ErrNotInCache = fmt.Errorf("item(s) not in cache")
 
 // the maximum number of keys to lookup at once
@@ -23,6 +23,7 @@ var getCacheMaxKeyCount = 100
 var lookupRequestTimeLimit = int64(300)
 var getRequestTimeLimit = int64(300)
 
+// CacheProxy - our interface
 type CacheProxy interface {
 	Exists([]string) (bool, error)
 	Get([]string) ([]awssqs.Message, error)
@@ -35,7 +36,7 @@ type cacheProxyImpl struct {
 }
 
 //
-// factory
+// NewCacheProxy - our factory
 //
 func NewCacheProxy(config *ServiceConfig) (CacheProxy, error) {
 

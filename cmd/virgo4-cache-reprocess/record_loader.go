@@ -9,11 +9,13 @@ import (
 	"strings"
 )
 
+// ErrBadRecord - the record is bad
 var ErrBadRecord = fmt.Errorf("bad record encountered")
-var ErrBadRecordId = fmt.Errorf("bad record identifier")
+
+// ErrFileNotOpen - the file is not open
 var ErrFileNotOpen = fmt.Errorf("file is not open")
 
-// the RecordLoader interface
+// RecordLoader - our interface
 type RecordLoader interface {
 	Validate(CacheProxy) error
 	First() (Record, error)
@@ -21,7 +23,7 @@ type RecordLoader interface {
 	Done()
 }
 
-// the record interface
+// Record - the record interface
 type Record interface {
 	Id() string
 	//Raw() []byte
@@ -39,7 +41,7 @@ type recordImpl struct {
 	RecordId string
 }
 
-// and the factory
+// NewRecordLoader - the factory
 func NewRecordLoader(filename string) (RecordLoader, error) {
 
 	file, err := os.Open(filename)
