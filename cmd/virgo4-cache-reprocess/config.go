@@ -12,7 +12,7 @@ type ServiceConfig struct {
 	OutQueueName string // SQS queue name for outbound documents
 	PollTimeOut  int64  // the SQS queue timeout (in seconds)
 
-	DataSourceName    string // the name to associate the data with. Each record has metadata showing this value
+	DataSourceNames   string // the data sources to include in the query
 	MessageBucketName string // the bucket to use for large messages
 	DownloadDir       string // the S3 file download directory (local)
 
@@ -68,7 +68,7 @@ func LoadConfiguration() *ServiceConfig {
 	cfg.InQueueName = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_IN_QUEUE")
 	cfg.OutQueueName = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_OUT_QUEUE")
 	cfg.PollTimeOut = int64(envToInt("VIRGO4_CACHE_REPROCESS_QUEUE_POLL_TIMEOUT"))
-	cfg.DataSourceName = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_DATA_SOURCE")
+	cfg.DataSourceNames = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_DATA_SOURCE")
 	cfg.MessageBucketName = ensureSetAndNonEmpty("VIRGO4_SQS_MESSAGE_BUCKET")
 	cfg.DownloadDir = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_DOWNLOAD_DIR")
 	cfg.PostgresHost = ensureSetAndNonEmpty("VIRGO4_CACHE_REPROCESS_POSTGRES_HOST")
@@ -85,7 +85,7 @@ func LoadConfiguration() *ServiceConfig {
 	log.Printf("[CONFIG] InQueueName             = [%s]", cfg.InQueueName)
 	log.Printf("[CONFIG] OutQueueName            = [%s]", cfg.OutQueueName)
 	log.Printf("[CONFIG] PollTimeOut             = [%d]", cfg.PollTimeOut)
-	log.Printf("[CONFIG] DataSourceName          = [%s]", cfg.DataSourceName)
+	log.Printf("[CONFIG] DataSourceNames         = [%s]", cfg.DataSourceNames)
 	log.Printf("[CONFIG] MessageBucketName       = [%s]", cfg.MessageBucketName)
 	log.Printf("[CONFIG] DownloadDir             = [%s]", cfg.DownloadDir)
 	log.Printf("[CONFIG] PostgresHost            = [%s]", cfg.PostgresHost)
