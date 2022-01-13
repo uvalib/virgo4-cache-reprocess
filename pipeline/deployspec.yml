@@ -29,6 +29,9 @@ phases:
       - cd $CODEBUILD_SRC_DIR/terraform-infrastructure/virgo4.lib.virginia.edu/ecs-tasks/staging/virgo4-hathi-cache-reprocess
       - terraform init -no-color
       - terraform apply -no-color -auto-approve
+      - cd $CODEBUILD_SRC_DIR/terraform-infrastructure/virgo4.lib.virginia.edu/ecs-tasks/staging/virgo4-dynamic-cache-reprocess
+      - terraform init -no-color
+      - terraform apply -no-color -auto-approve
 
 #  post_build:
 #    commands:
