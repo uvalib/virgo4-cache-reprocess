@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -11,6 +12,11 @@ import (
 
 // time to wait before flushing pending records
 var flushTimeout = 5 * time.Second
+
+type NameTuple struct {
+	LocalName  string
+	RemoteName string
+}
 
 //
 // main entry point
@@ -61,29 +67,40 @@ func main() {
 		fatalIfError(e)
 
 		// download each file and validate it
-		localNames := make([]string, 0, len(inbound))
-		for ix, f := range inbound {
+		fileSets := make([]NameTuple, 0)
+		for _, f := range inbound {
+
+			// save the remote name, we will need it later
+			file := NameTuple{
+				RemoteName: fmt.Sprintf("%s/%s", f.SourceBucket, f.SourceKey),
+			}
+
+			// VIRGONEW-2419
+			if f.ObjectSize == 0 {
+				log.Printf("INFO: notification is reporting %s is ZERO length, ignoring", file.RemoteName)
+				continue
+			}
 
 			// download the file
-			localFile, e := s3download(cfg.DownloadDir, f.SourceBucket, f.SourceKey, f.ObjectSize)
+			file.LocalName, e = s3download(cfg.DownloadDir, f.SourceBucket, f.SourceKey, f.ObjectSize)
 			fatalIfError(e)
 
-			// save the local name, we will need it later
-			localNames = append(localNames, localFile)
+			// update our list of files to be processed
+			fileSets = append(fileSets, file)
 
-			log.Printf("Validating %s/%s (%s)", f.SourceBucket, f.SourceKey, localNames[ix])
+			log.Printf("INFO: validating %s (%s)", file.RemoteName, file.LocalName)
 
 			// create a new loader
-			loader, e := NewRecordLoader(localNames[ix])
+			loader, e := NewRecordLoader(file.LocalName)
 			fatalIfError(e)
 
 			// validate the file and ensure each item appears in the cache
 			e = loader.Validate(cacheProxy)
 			loader.Done()
 			if e == nil {
-				log.Printf("INFO: %s/%s (%s) appears to be OK, ready for ingest", f.SourceBucket, f.SourceKey, localNames[ix])
+				log.Printf("INFO: %s (%s) appears to be OK, ready for ingest", file.RemoteName, file.LocalName)
 			} else {
-				log.Printf("ERROR: %s/%s (%s) appears to be invalid, ignoring it (%s)", f.SourceBucket, f.SourceKey, localNames[ix], e.Error())
+				log.Printf("ERROR: %s (%s) appears to be invalid, ignoring it (%s)", file.RemoteName, file.LocalName, e.Error())
 				err = e
 				break
 			}
@@ -91,9 +108,9 @@ func main() {
 
 		// one of the files was invalid, we need to ignore the entire batch and delete the local files
 		if err != nil {
-			for _, f := range localNames {
-				log.Printf("INFO: removing invalid file %s", f)
-				e := os.Remove(f)
+			for _, f := range fileSets {
+				log.Printf("INFO: removing invalid file %s", f.LocalName)
+				e := os.Remove(f.LocalName)
 				fatalIfError(e)
 			}
 
@@ -101,7 +118,7 @@ func main() {
 			continue
 		}
 
-		// if we got here without an error then all the files are valid to be loaded... we can delete the inbound message
+		// if we got here without an error then all the files can be processed... we can delete the inbound message
 		// because it has been processed
 
 		delMessages := make([]awssqs.Message, 0, 1)
@@ -120,13 +137,13 @@ func main() {
 			}
 		}
 
-		// now we can process each of the inbound files
-		for ix, f := range inbound {
+		// now we can process each of the viable inbound files
+		for _, file := range fileSets {
 
 			start := time.Now()
-			log.Printf("Processing %s/%s (%s)", f.SourceBucket, f.SourceKey, localNames[ix])
+			log.Printf("INFO: processing %s (%s)", file.RemoteName, file.LocalName)
 
-			loader, err := NewRecordLoader(localNames[ix])
+			loader, err := NewRecordLoader(file.LocalName)
 			// fatal fail here because we have already validated the file and believe it to be correct so this
 			// is some other sort of failure
 			fatalIfError(err)
@@ -137,7 +154,7 @@ func main() {
 			if err != nil {
 				// are we done
 				if err == io.EOF {
-					log.Printf("WARNING: EOF on first read, looks like an empty file")
+					log.Printf("WARNING: EOF on first read, unexpected empty file")
 				} else {
 					// fatal fail here because we have already validated the file and believe it to be correct so this
 					// is some other sort of failure
@@ -166,11 +183,11 @@ func main() {
 
 			loader.Done()
 			duration := time.Since(start)
-			log.Printf("Done processing %s/%s (%s). %d records (%0.2f tps)", f.SourceBucket, f.SourceKey, localNames[ix], count, float64(count)/duration.Seconds())
+			log.Printf("INFO: done processing %s (%s). %d records (%0.2f tps)", file.RemoteName, file.LocalName, count, float64(count)/duration.Seconds())
 
 			// file has been ingested, remove it
-			log.Printf("INFO: removing processed file %s", localNames[ix])
-			err = os.Remove(localNames[ix])
+			log.Printf("INFO: removing processed file %s", file.LocalName)
+			err = os.Remove(file.LocalName)
 			fatalIfError(err)
 		}
 	}
