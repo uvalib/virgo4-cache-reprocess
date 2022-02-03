@@ -46,7 +46,7 @@ func send_worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, queue awssqs.
 			count++
 
 			if count%1000 == 0 {
-				log.Printf("send worker %d processed %d records", id, count)
+				log.Printf("INFO: send worker %d processed %d records", id, count)
 			}
 		} else {
 
@@ -60,7 +60,7 @@ func send_worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, queue awssqs.
 				// reset the block
 				messages = messages[:0]
 
-				log.Printf("send worker %d processed %d records (flushing)", id, count)
+				log.Printf("INFO: send worker %d processed %d records (flushing)", id, count)
 			}
 
 			// reset the count

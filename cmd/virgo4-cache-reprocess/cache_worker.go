@@ -48,7 +48,7 @@ func cache_worker(id int, cache CacheProxy, inbound <-chan Record, outbound chan
 			count++
 
 			if count%1000 == 0 {
-				log.Printf("cache worker %d processed %d records", id, count)
+				log.Printf("INFO: cache worker %d processed %d records", id, count)
 			}
 		} else {
 
@@ -66,7 +66,7 @@ func cache_worker(id int, cache CacheProxy, inbound <-chan Record, outbound chan
 				// reset the block
 				block = block[:0]
 
-				log.Printf("cache worker %d processed %d records (flushing)", id, count)
+				log.Printf("INFO: cache worker %d processed %d records (flushing)", id, count)
 			}
 
 			// reset the count

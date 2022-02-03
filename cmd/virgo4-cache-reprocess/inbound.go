@@ -27,7 +27,7 @@ func getInboundNotification(config ServiceConfig, aws awssqs.AWS_SQS, inQueueHan
 		// did we get anything to process
 		if len(messages) == 1 {
 
-			log.Printf("Received a new notification")
+			log.Printf("INFO: received a new notification")
 
 			//log.Printf("%s", string( messages[0].Payload ) )
 
@@ -61,7 +61,7 @@ func getInboundNotification(config ServiceConfig, aws awssqs.AWS_SQS, inQueueHan
 			}
 
 		} else {
-			log.Printf("No new notifications...")
+			log.Printf("INFO: no new notifications...")
 		}
 	}
 }
