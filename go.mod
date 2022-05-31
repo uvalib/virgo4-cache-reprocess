@@ -3,10 +3,11 @@ module github.com/uvalib/virgo4-cache-reprocess
 go 1.14
 
 require (
-	github.com/aws/aws-sdk-go v1.44.7
+	github.com/aws/aws-sdk-go v1.44.24 // indirect
 	github.com/go-ozzo/ozzo-dbx v1.5.0
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
-	github.com/lib/pq v1.10.5
+	github.com/lib/pq v1.10.6
 	github.com/stretchr/testify v1.5.1 // indirect
-	github.com/uvalib/virgo4-sqs-sdk/awssqs v0.0.0-20220505112929-75c38a9b240b
+	github.com/uvalib/uva-aws-s3-sdk/uva-s3 v0.0.0-20220527134326-5f592a4b5fe9
+	github.com/uvalib/virgo4-sqs-sdk/awssqs v0.0.0-20220527142204-5974a96aa593
 )
