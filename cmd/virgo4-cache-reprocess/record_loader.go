@@ -174,7 +174,14 @@ func (l *recordLoaderImpl) recordRead() (Record, error) {
 
 	id, err := l.Reader.ReadString('\n')
 	if err != nil {
-		return nil, err
+		// if we encounter end of file, we might have actually read a record check to see if we did
+		if err == io.EOF {
+			if len(id) == 0 {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	// remove the newline
