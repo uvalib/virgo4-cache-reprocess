@@ -37,14 +37,12 @@ type cacheProxyImpl struct {
 	db          *dbx.DB
 }
 
-//
 // NewCacheProxy - our factory
-//
 func NewCacheProxy(config *ServiceConfig) (CacheProxy, error) {
 
 	impl := &cacheProxyImpl{}
 
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d connect_timeout=%d sslmode=disable",
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d connect_timeout=%d",
 		config.PostgresUser, config.PostgresPass, config.PostgresDatabase, config.PostgresHost, config.PostgresPort, 30)
 
 	db, err := dbx.MustOpen("postgres", connStr)
@@ -61,9 +59,7 @@ func NewCacheProxy(config *ServiceConfig) (CacheProxy, error) {
 	return impl, nil
 }
 
-//
 // do all of the supplied keys exist in the cache
-//
 func (ci *cacheProxyImpl) Exists(keys []string) (bool, error) {
 
 	var ids []struct {
@@ -110,9 +106,7 @@ func (ci *cacheProxyImpl) Exists(keys []string) (bool, error) {
 	return true, nil
 }
 
-//
 // get the specified items from the cache
-//
 func (ci *cacheProxyImpl) Get(keys []string) ([]awssqs.Message, error) {
 
 	var cacheRecords []struct {
