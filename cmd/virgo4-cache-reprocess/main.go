@@ -20,9 +20,7 @@ type NameTuple struct {
 	RemoteName string
 }
 
-//
 // main entry point
-//
 func main() {
 
 	log.Printf("===> %s service staring up (version: %s) <===", os.Args[0], Version())
