@@ -6,7 +6,7 @@ version: 0.2
 
 env:
   variables:
-    terraform_version: 1.11.1
+    terraform_version: 1.15.8
 
 phases:
   install:
@@ -19,7 +19,7 @@ phases:
 
   pre_build:
     commands:
-      - git clone https://$GITLAB_USER:$GITLAB_TOKEN@gitlab.com/uvalib/terraform-infrastructure.git
+      - git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/uvalib/terraform-infrastructure.git
 
   build:
     commands:
