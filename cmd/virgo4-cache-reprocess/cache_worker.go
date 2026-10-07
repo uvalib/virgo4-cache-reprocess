@@ -13,15 +13,23 @@ func cache_worker(id int, cache CacheProxy, inbound <-chan Record, outbound chan
 	count := uint(0)
 	block := make([]Record, 0, bsize)
 	var record Record
+
+	// a single reusable flush timer; time.After in the loop would allocate a new timer per record
+	flushTimer := time.NewTimer(flushTimeout)
+	defer flushTimer.Stop()
+
 	for {
 
 		timeout := false
+
+		// restart the flush timer before we wait
+		resetTimer(flushTimer, flushTimeout)
 
 		// process a message or wait...
 		select {
 		case record = <-inbound:
 
-		case <-time.After(flushTimeout):
+		case <-flushTimer.C:
 			timeout = true
 		}
 

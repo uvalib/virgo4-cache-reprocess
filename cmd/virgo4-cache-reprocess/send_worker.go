@@ -16,15 +16,23 @@ func send_worker(id int, config ServiceConfig, aws awssqs.AWS_SQS, queue awssqs.
 	count := uint(0)
 	messages := make([]awssqs.Message, 0, bsize)
 	var record awssqs.Message
+
+	// a single reusable flush timer; time.After in the loop would allocate a new timer per record
+	flushTimer := time.NewTimer(flushTimeout)
+	defer flushTimer.Stop()
+
 	for {
 
 		timeout := false
+
+		// restart the flush timer before we wait
+		resetTimer(flushTimer, flushTimeout)
 
 		// process a message or wait...
 		select {
 		case record = <-tosend:
 
-		case <-time.After(flushTimeout):
+		case <-flushTimer.C:
 			timeout = true
 		}
 
